@@ -3,6 +3,7 @@ from typing import List
 
 from pydantic import BaseModel, StrictStr, Field, field_validator
 
+from common.common_constants import VECTOR_DB_PATH, KNOWLEDGE_DB_PATH
 from common.common_prompt_template import default_template
 from common.common_enums import GptModelName
 
@@ -29,16 +30,16 @@ class ChatParams(BaseModel):
     # Wenxin_Secret_key
     Wenxin_secret_key: str = None
     # 数据库路径
-    vector_db_path: str = "../vector_db/chroma"
+    vector_db_path: str = VECTOR_DB_PATH
     # 源文件路径
-    source_file_path: str = "../knowledge"
+    knowledge_file_path: str = KNOWLEDGE_DB_PATH
     # 提示词模板 默认为基础模板
     prompt_template: str = default_template
     # 模板中需要替换的变量
     input_variables: List[str] = Field(default=["context", "question"],
                                        description="A list of variables for the prompt template.")
     # Embedding
-    embedding: str = "m3e"
+    embedding_model_name: str = "openai"
     # top k
     top_k: int = 5
     # embedding_key

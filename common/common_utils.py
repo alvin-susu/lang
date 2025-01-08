@@ -1,7 +1,7 @@
 import os
 import re
 
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain_community.document_loaders import UnstructuredMarkdownLoader, PyMuPDFLoader, UnstructuredFileLoader
 from langchain_community.embeddings import ZhipuAIEmbeddings
 from langchain_chroma import Chroma

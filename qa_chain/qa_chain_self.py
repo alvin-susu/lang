@@ -29,19 +29,19 @@ class QaChainSelf:
         self.model = chat_params.model
         self.temperature = chat_params.temperature
         self.top_k = chat_params.top_k
-        self.file_path = chat_params.file_path
-        self.persist_path = chat_params.persist_path
+        self.knowledge_file_path = chat_params.knowledge_file_path
+        self.persist_path = chat_params.vector_db_path
         self.appid = chat_params.appid
         self.api_key = chat_params.api_key
         self.Spark_api_secret = chat_params.Spark_api_secret
         self.Wenxin_secret_key = chat_params.Wenxin_secret_key
-        self.embeddings = chat_params.embeddings
+        self.embedding_model_name = chat_params.embedding_model_name
         self.embedding_key = chat_params.embedding_key
-        self.template = chat_params.default_template_rq
+        self.template = chat_params.prompt_template
         self.vectordb = get_vectordb(
-            self.file_path,
+            self.knowledge_file_path,
             self.persist_path,
-            self.embeddings,
+            self.embedding_model_name,
             self.embedding_key
         )
 
