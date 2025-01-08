@@ -65,7 +65,7 @@ class QaChainSelf:
         )
 
         # 自定义的QA链
-        self.qa_chain = RetrievalQA.from_chain_type(
+        self.qa_chain = RetrievalQA.invoke(
             llm=self.llm,
             retriever=self.retriever,
             return_source_documents=True,
