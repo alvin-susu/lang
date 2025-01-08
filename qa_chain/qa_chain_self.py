@@ -65,7 +65,7 @@ class QaChainSelf:
         )
 
         # 自定义的QA链
-        self.qa_chain = RetrievalQA.invoke(
+        self.qa_chain = RetrievalQA.from_chain_type(
             llm=self.llm,
             retriever=self.retriever,
             return_source_documents=True,
@@ -89,7 +89,7 @@ class QaChainSelf:
         if top_k is None:
             top_k = self.top_k
 
-        result = self.qa_chain({"query": question, "temperature": temperature, "top_k": top_k})
+        result = self.qa_chain.invoke({"query": question, "temperature": temperature, "top_k": top_k})
         answer = result["result"]
         answer = re.sub(r"\\n", '<br/>', answer)
         return answer
