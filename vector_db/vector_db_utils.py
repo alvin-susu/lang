@@ -1,9 +1,10 @@
 from langchain_openai import OpenAIEmbeddings
 
 from common.common_constants import KNOWLEDGE_DB_PATH, VECTOR_DB_PATH
-from common.common_utils import create_db, get_embedding, get_vectordb
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
+
+from common.db_utils import get_vectordb
 
 if __name__ == '__main__':
     # vector_db = create_db(KNOWLEDGE_DB_PATH,
