@@ -14,6 +14,7 @@ if __name__ == '__main__':
     # print(search)
 
     vector_db = get_vectordb(KNOWLEDGE_DB_PATH, VECTOR_DB_PATH)
+    print(f"数据库加载成功，存储向量数量: {vector_db._collection.count()}")
     search = vector_db.similarity_search("什么是LLM")
     print(search)
     # # 配置路径
