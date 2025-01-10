@@ -17,7 +17,7 @@ class ChatParams(BaseModel):
     # 是否使用历史对话
     is_use_history: bool = False
     # 历史对话信息
-    chat_history: List[str] = None
+    chat_history: list = None
     # API_KRY
     api_key: str = None
     # Secret_Key
