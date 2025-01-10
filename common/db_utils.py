@@ -73,12 +73,18 @@ def get_vectordb(file_path: str = None, persist_path: str = None, embedding_mode
     if os.path.exists(persist_path):
         contents = os.listdir(persist_path)
         if len(contents) == 0:
+            print(f"向量数据库不存在,需要新建向量数据库,路径为:{persist_path}")
             create_db(file_path, persist_path, embedding_model_name)
             vectordb = load_knowledge_db(persist_path, embeddings)
+            print(f"向量数据库创建完毕")
         else:
+            print(f"向量数据库已存在,加载路径为:{persist_path}")
             vectordb = load_knowledge_db(persist_path, embeddings)
+            print(f"向量数据库加载完毕")
     else:
+        print(f"向量数据库不存在,需要新建向量数据库,默认路径为:{persist_path}")
         create_db(file_path, persist_path, embedding_model_name)
         vectordb = load_knowledge_db(persist_path, embeddings)
+        print(f"向量数据库使用默认路径创建完毕")
 
     return vectordb

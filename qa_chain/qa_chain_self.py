@@ -1,10 +1,15 @@
 import re
 
-from common.common_utils import model_to_llm, get_vectordb
-from serve.params.char_params import ChatParams
+import gradio
+from gradio.components.chatbot import ChatMessage
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains.retrieval import create_retrieval_chain
 from langchain.prompts import PromptTemplate
-from langchain.chains import RetrievalQA
-from langchain_community.vectorstores import Chroma
+
+from common.common_prompt_template import template_with_history
+from common.common_utils import model_to_llm
+from common.db_utils import get_vectordb
+from serve.params.char_params import ChatParams
 
 
 class QaChainSelf:
@@ -38,6 +43,8 @@ class QaChainSelf:
         self.embedding_model_name = chat_params.embedding_model_name
         self.embedding_key = chat_params.embedding_key
         self.template = chat_params.prompt_template
+        self.is_user_history = chat_params.is_use_history
+        self.chat_history = chat_params.chat_history
         self.vectordb = get_vectordb(
             self.knowledge_file_path,
             self.persist_path,
@@ -53,23 +60,37 @@ class QaChainSelf:
             self.Spark_api_secret,
             self.Wenxin_secret_key
         )
-
-        self.QA_CHAIN_PROMPT = PromptTemplate(
-            input_variables=chat_params.input_variables,
-            template=self.template,
-        )
-
         self.retriever = self.vectordb.as_retriever(
             search_type="similarity",
             search_kwargs={'k': self.top_k}
         )
 
         # 自定义的QA链
-        self.qa_chain = RetrievalQA.from_chain_type(
+        self.QA_CHAIN_PROMPT = PromptTemplate(
+            input_variables=chat_params.input_variables,
+            template=self.template,
+        )
+        no_history_documents_chain = create_stuff_documents_chain(
             llm=self.llm,
+            prompt=self.QA_CHAIN_PROMPT
+        )
+        self.qa_chain = create_retrieval_chain(
             retriever=self.retriever,
-            return_source_documents=True,
-            chain_type_kwargs={"prompt": self.QA_CHAIN_PROMPT}
+            combine_docs_chain=no_history_documents_chain
+        )
+
+        # 带有上下文的自定义的QA链
+        self.QA_CHAIN_PROMPT_WITH_HISTORY = PromptTemplate(
+            input_variables=["context", "question", "chat_history"],
+            template=template_with_history,
+        )
+        with_history_documents_chain = create_stuff_documents_chain(
+            llm=self.llm,
+            prompt=self.QA_CHAIN_PROMPT_WITH_HISTORY
+        )
+        self.qa_chain_with_history = create_retrieval_chain(
+            retriever=self.retriever,
+            combine_docs_chain=with_history_documents_chain
         )
 
     def answer(self, question: str, temperature=None, top_k=4):
@@ -89,7 +110,24 @@ class QaChainSelf:
         if top_k is None:
             top_k = self.top_k
 
-        result = self.qa_chain.invoke({"query": question, "temperature": temperature, "top_k": top_k})
-        answer = result["result"]
-        answer = re.sub(r"\\n", '<br/>', answer)
-        return answer
+        # 需要带历史记录则将is_user_history置为True
+        print(f"提问的question为{question}")
+        if self.is_user_history:
+            print(f"使用历史记录回答问题")
+            result = self.qa_chain_with_history.invoke(
+                {"question": question, "context": "context"})
+        else:
+            print(f"不使用历史记录回答问题")
+            result = self.qa_chain.invoke({"question": question, "input": question, "context": "context"})
+        print(f"模型回答的结果为:{result}")
+        user_message = gradio.ChatMessage(role="user", content=result['question'])
+        assistant_message = gradio.ChatMessage(role="assistant", content=result['answer'])
+        chatbot_response = [user_message, assistant_message]
+        return chatbot_response
+
+    def clear_history(self):
+        return self.chat_history.clear()
+
+    def change_history_length(self, history_round_num: int = 1):
+        return self.chat_history[len(self.chat_history) - history_round_num:]
+

@@ -17,7 +17,7 @@ async def chat(chat_params: ChatParams):
     # 确定调用的链条
     if chat_params.is_use_history is False:
         chain = QaChainSelf(chat_params)
-        response = chain.answer(question=chat_params.prompt)
+        response = chain.answer(question=chat_params.question)
         return response
     else:
         return "API暂不支持即时链条"

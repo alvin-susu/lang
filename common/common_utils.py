@@ -11,6 +11,7 @@ from langchain_openai import OpenAIEmbeddings
 
 from common.common_constants import OPEN_API_STR, WEN_XIN_STR, SPARK_STR, ZHI_PU_AI_STR
 from common.common_enums import GptModelName, ErnieBotModelName, SparkModelName, ChatGlmModelName
+from llm.call_llm import get_completion
 from llm.spark_llm import Spark_LLM
 from llm.wen_xin_llm import WenXin_LLM
 
@@ -28,19 +29,30 @@ def model_to_llm(model_name: str = None, temperature: float = 0.0, appid: str = 
     :return: LLM模型
     """
     if model_name in [item.value for item in GptModelName]:
+        print("加载openaiLLM模型")
         api_key, = __get_api_keys_for_model("openai", api_key)
-        return ChatOpenAI(model_name=model_name, temperature=temperature, openai_api_key=api_key)
+        chat_open_ai = ChatOpenAI(model_name=model_name, temperature=temperature, openai_api_key=api_key)
+        print("openaiLLM模型加载完毕")
+        return chat_open_ai
 
     elif model_name in [item.value for item in ErnieBotModelName]:
+        print("model_to_llm model_name为ErnieBotModelName")
         api_key, wenxin_secret_key = __get_api_keys_for_model("wenxin", api_key, (wenxin_secret_key,))
-        return WenXin_LLM(model_name=model_name, temperature=temperature, api_key=api_key, secret_key=wenxin_secret_key)
+        wenxin_llm = WenXin_LLM(model_name=model_name, temperature=temperature, api_key=api_key,
+                                secret_key=wenxin_secret_key)
+        print("wenxinLLM模型加载完毕")
+        return wenxin_llm
 
     elif model_name in [item.value for item in SparkModelName]:
+        print("model_to_llm model_name为SparkModelName")
         api_key, appid, spark_api_secret = __get_api_keys_for_model("spark", api_key, (appid, spark_api_secret))
-        return Spark_LLM(model_name=model_name, temperature=temperature, appid=appid, api_secret=spark_api_secret,
-                         api_key=api_key)
+        spark_llm = Spark_LLM(model_name=model_name, temperature=temperature, appid=appid, api_secret=spark_api_secret,
+                              api_key=api_key)
+        print("sparkLLM模型加载完毕")
+        return spark_llm
 
     elif model_name in [item.value for item in ChatGlmModelName]:
+        print("model_to_llm model_name为ChatGlmModelName")
         api_key, = __get_api_keys_for_model("zhipuai", api_key)
         # return ZhiPu_LLM(model_name=model, zhipuai_api_key=api_key, temperature=temperature)
 
@@ -119,10 +131,10 @@ def __get_api_keys_for_model(model_name: str, api_key: str, additional_keys: tup
     :return:
     """
     if api_key is None:
-        keys = __parse_llm_api_key(model_name)
+        key = __parse_llm_api_key(model_name)
         if additional_keys:
-            return keys[:len(additional_keys)]  # Extract the needed number of keys
-        return keys
+            return key[:len(additional_keys)]  # Extract the needed number of key
+        return (api_key,)
     return (api_key,) + additional_keys if additional_keys else (api_key,)
 
 
@@ -134,13 +146,56 @@ def __parse_llm_api_key(model: str):
     if env_file is None:
         _ = load_dotenv(find_dotenv())
         env_file = dict(os.environ)
-    if model == OPEN_API_STR :
-        return env_file["OPENAI_API_KEY"]
+    if model == OPEN_API_STR:
+        key = env_file["OPENAI_API_KEY"]
     elif model == WEN_XIN_STR:
-        return env_file["wenxin_api_key"], env_file["wenxin_secret_key"]
+        key = env_file["wenxin_api_key"], env_file["wenxin_secret_key"]
     elif model == SPARK_STR:
-        return env_file["spark_api_key"], env_file["spark_appid"], env_file["spark_api_secret"]
+        key = env_file["spark_api_key"], env_file["spark_appid"], env_file["spark_api_secret"]
     elif model == ZHI_PU_AI_STR:
-        return get_from_dict_or_env(env_file, "zhipuai_api_key", "ZHIPUAI_API_KEY")
+        key = get_from_dict_or_env(env_file, "zhipuai_api_key", "ZHIPUAI_API_KEY")
     else:
         raise ValueError(f"model{model} not support!!!")
+
+    print("从环境变量获取key完成")
+    return key
+
+def format_chat_prompt(message, chat_history):
+    prompt = ""
+    for chat_item in chat_history:
+        user_message, bot_message = chat_item
+        prompt = f"{prompt} \nUser:{user_message}\nAssistant: {bot_message}"
+    prompt = f"{prompt}\nUser: {message}\nAssistant:"
+    return prompt
+
+
+def respond(message, chat_history, llm, history_len=3, temperature=0.1, max_tokens=2048):
+    """
+    该函数用于生成机器人的回复。
+
+    参数:
+    message: 当前的用户消息。
+    chat_history: 聊天历史记录。
+
+    返回:
+    "": 空字符串表示没有内容需要显示在界面上，可以替换为真正的机器人回复。
+    chat_history: 更新后的聊天历史记录
+    """
+    if message is None or len(message) < 1:
+        return "", chat_history
+    try:
+        # 限制 history 的记忆长度
+        chat_history = chat_history[-history_len:] if history_len > 0 else []
+        # 调用上面的函数，将用户的消息和聊天历史记录格式化为一个 prompt。
+        formatted_prompt = format_chat_prompt(message=message, chat_history=chat_history)
+        # 使用llm对象的predict方法生成机器人的回复（注意：llm对象在此代码中并未定义）。
+        bot_message = get_completion(
+            formatted_prompt, llm, temperature=temperature, max_tokens=max_tokens)
+        # 将bot_message中\n换为<br/>
+        bot_message = re.sub(r"\\n", '<br/>', bot_message)
+        # 将用户的消息和机器人的回复加入到聊天历史记录中。
+        chat_history.append((message, bot_message))
+        # 返回一个空字符串和更新后的聊天历史记录（这里的空字符串可以替换为真正的机器人回复，如果需要显示在界面上）。
+        return "", chat_history
+    except Exception as e:
+        return e, chat_history

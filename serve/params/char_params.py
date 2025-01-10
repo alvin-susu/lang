@@ -1,22 +1,23 @@
 # 定义数据模型结构体 用于post请求
 from typing import List
 
-from pydantic import BaseModel, StrictStr, Field, field_validator
+from pydantic import BaseModel, StrictStr, Field
 
 from common.common_constants import VECTOR_DB_PATH, KNOWLEDGE_DB_PATH
-from common.common_prompt_template import default_template
 from common.common_enums import GptModelName
+from common.common_prompt_template import default_template
 
 
 class ChatParams(BaseModel):
-    # 提示词 StrictStr表示不可为None的字符串
-    prompt: StrictStr
+    question: str
     # 使用模型 默认为gpt3.5
     model: str = GptModelName.GPT_3_5_TURBO
     # 温度系数 默认值为0.1
     temperature: float = 0.1
     # 是否使用历史对话
     is_use_history: bool = False
+    # 历史对话信息
+    chat_history: List[str] = None
     # API_KRY
     api_key: str = None
     # Secret_Key
