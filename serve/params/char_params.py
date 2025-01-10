@@ -37,8 +37,7 @@ class ChatParams(BaseModel):
     # 提示词模板 默认为基础模板
     prompt_template: str = default_template
     # 模板中需要替换的变量
-    input_variables: List[str] = Field(default=["context", "question"],
-                                       description="A list of variables for the prompt template.")
+    input_variables: List[str] = None
     # Embedding
     embedding_model_name: str = "openai"
     # top k

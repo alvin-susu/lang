@@ -57,8 +57,7 @@ with block as demo:
             # 创建一个文本框组件，用于输入 prompt。
             msg = gr.Textbox(label="Prompt/问题")
             with gr.Row():
-                db_with_his_btn = gr.Button("Chat db with history")
-                db_wo_his_btn = gr.Button("Chat db without history")
+                db_wo_his_btn = gr.Button("Chat with db")
                 llm_btn = gr.Button("Chat with llm")
             with gr.Row():
                 # 创建一个清除按钮，用于清除聊天机器人组件的内容。
@@ -86,6 +85,12 @@ with block as demo:
                                   step=1,
                                   label="vector db search top k",
                                   interactive=True)
+                is_user_history = gr.Radio(
+                    value=False,
+                    choices=[True, False],
+                    label="choose user history",
+                )
+
                 # 对话历史长度滑动条
                 history_len = gr.Slider(0,
                                         5,
@@ -109,13 +114,9 @@ with block as demo:
                       inputs=[file, embeddings],
                       outputs=[msg])
 
-        # 设置按钮的点击事件。当点击时，调用上面定义的 chain 函数，并传入用户的消息和聊天历史记录，然后更新文本框和聊天机器人组件。
-        db_with_his_btn.click(model_center.chat,
-                              inputs=[msg, chatbot, llm, embeddings, temperature, top_k, history_len],
-                              outputs=chatbot)
         # 设置按钮的点击事件。当点击时，调用上面定义的 qa_chain_self_answer 函数，并传入用户的消息和聊天历史记录，然后更新文本框和聊天机器人组件。
         db_wo_his_btn.click(model_center.chat,
-                            inputs=[msg, chatbot, llm, embeddings, temperature, top_k],
+                            inputs=[msg, chatbot, llm, embeddings, temperature, top_k, is_user_history],
                             outputs=chatbot)
         # 设置按钮的点击事件。当点击时，调用上面定义的 respond 函数，并传入用户的消息和聊天历史记录，然后更新文本框和聊天机器人组件。
         llm_btn.click(respond,

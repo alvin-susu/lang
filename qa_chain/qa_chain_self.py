@@ -1,12 +1,8 @@
-import re
-
 import gradio
-from gradio.components.chatbot import ChatMessage
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains.retrieval import create_retrieval_chain
 from langchain.prompts import PromptTemplate
 
-from common.common_prompt_template import template_with_history
 from common.common_utils import model_to_llm
 from common.db_utils import get_vectordb
 from serve.params.char_params import ChatParams
@@ -79,20 +75,6 @@ class QaChainSelf:
             combine_docs_chain=no_history_documents_chain
         )
 
-        # 带有上下文的自定义的QA链
-        self.QA_CHAIN_PROMPT_WITH_HISTORY = PromptTemplate(
-            input_variables=["context", "question", "chat_history"],
-            template=template_with_history,
-        )
-        with_history_documents_chain = create_stuff_documents_chain(
-            llm=self.llm,
-            prompt=self.QA_CHAIN_PROMPT_WITH_HISTORY
-        )
-        self.qa_chain_with_history = create_retrieval_chain(
-            retriever=self.retriever,
-            combine_docs_chain=with_history_documents_chain
-        )
-
     def answer(self, question: str, temperature=None, top_k=4):
         """
         核心方法 调用问答链
@@ -111,14 +93,8 @@ class QaChainSelf:
             top_k = self.top_k
 
         # 需要带历史记录则将is_user_history置为True
-        print(f"提问的question为{question}")
-        if self.is_user_history:
-            print(f"使用历史记录回答问题")
-            result = self.qa_chain_with_history.invoke(
-                {"question": question, "context": "context"})
-        else:
-            print(f"不使用历史记录回答问题")
-            result = self.qa_chain.invoke({"question": question, "input": question, "context": "context"})
+        print(f"提问的question为{question}, 上下文为:{self.chat_history}")
+        result = self.qa_chain.invoke({"input": question, "question": question, "context": self.chat_history if self.is_user_history else None})
         print(f"模型回答的结果为:{result}")
         user_message = gradio.ChatMessage(role="user", content=result['question'])
         assistant_message = gradio.ChatMessage(role="assistant", content=result['answer'])
@@ -130,4 +106,3 @@ class QaChainSelf:
 
     def change_history_length(self, history_round_num: int = 1):
         return self.chat_history[len(self.chat_history) - history_round_num:]
-

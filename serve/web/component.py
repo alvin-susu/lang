@@ -20,9 +20,19 @@ class ModelComponent:
              top_k: int = 4,
              is_user_history: bool = False,
              knowledge_file_path: str = KNOWLEDGE_DB_PATH,
-             vector_db_path: str = VECTOR_DB_PATH):
+             vector_db_path: str = VECTOR_DB_PATH,
+             history_len: int = 3):
         print(
-            f"question: {question}, chat_history: {chat_history}, model: {model}, embedding: {embedding}, temperature: {temperature}, top_k: {top_k}, is_user_history: {is_user_history}, knowledge_file_path: {knowledge_file_path}, vector_db_path: {vector_db_path}")
+            f"chat函数 入参: question: {question},"
+            f" chat_history: {chat_history},"
+            f" model: {model},"
+            f" embedding: {embedding},"
+            f" temperature: {temperature},"
+            f" top_k: {top_k},"
+            f" is_user_history: {is_user_history},"
+            f" knowledge_file_path: {knowledge_file_path},"
+            f" vector_db_path: {vector_db_path},"
+            f"history_len: {history_len}")
 
         if question is None or len(question) == 0:
             return "please input question", chat_history
@@ -40,6 +50,7 @@ class ModelComponent:
                     vector_db_path=vector_db_path,
                 )
                 qa_chain = QaChainSelf(chat_params)
+                print(f"qa_chain: {qa_chain}")
                 answer = qa_chain.answer(question=question, temperature=temperature, top_k=top_k)
                 print("answer: ", answer)
                 print(type(answer))
