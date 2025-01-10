@@ -33,7 +33,8 @@ from dotenv import load_dotenv, find_dotenv
 from langchain.utils import get_from_dict_or_env
 
 
-def get_completion(prompt :str, model :str, temperature=0.1,api_key=None, secret_key=None, access_token=None, appid=None, api_secret=None, max_tokens=2048):
+def get_completion(prompt: str, model: str, temperature=0.1, api_key=None, secret_key=None, access_token=None,
+                   appid=None, api_secret=None, max_tokens=2048):
     # 调用大模型获取回复，支持上述三种模型+gpt
     # arguments:
     # prompt: 输入提示
@@ -45,15 +46,8 @@ def get_completion(prompt :str, model :str, temperature=0.1,api_key=None, secret
     # max_tokens : 返回最长序列
     # return: 模型返回，字符串
     # 调用 GPT
-    print(f"prompt:{prompt}")
-    print(f"model:{model}")
-    print(f"temperature:{temperature}")
-    print(f"api_key:{api_key}")
-    print(f"secret_key:{secret_key}")
-    print(f"access_token:{access_token}")
-    print(f"appid:{appid}")
-    print(f"api_secret:{api_secret}")
-    print(f"max_tokens:{max_tokens}")
+    print(
+        f"get_completion入参: prompt:{prompt}, model:{model}, temperature:{temperature}, api_key:{api_key}, secret_key:{secret_key}, access_token:{access_token}")
     if model in ["gpt-3.5-turbo", "gpt-3.5-turbo-16k-0613", "gpt-3.5-turbo-0613", "gpt-4", "gpt-4-32k"]:
         return get_completion_gpt(prompt, model, temperature, api_key, max_tokens)
     elif model in ["ERNIE-Bot", "ERNIE-Bot-4", "ERNIE-Bot-turbo"]:
@@ -64,22 +58,27 @@ def get_completion(prompt :str, model :str, temperature=0.1,api_key=None, secret
         return get_completion_glm(prompt, model, temperature, api_key, max_tokens)
     else:
         return "不正确的模型"
-    
-def get_completion_gpt(prompt : str, model : str, temperature : float, api_key:str, max_tokens:int):
+
+
+def get_completion_gpt(prompt: str, model: str, temperature: float, api_key: str, max_tokens: int):
     # 封装 OpenAI 原生接口
-    if api_key == None:
+    if api_key is None:
         api_key = parse_llm_api_key("openai")
+    print(f"get_completion_gpt的参数为, prompt:{prompt}, model:{model}, temperature:{temperature}, api_key:{api_key}")
     openai.api_key = api_key
     # 具体调用
     messages = [{"role": "user", "content": prompt}]
-    response = openai.ChatCompletion.create(
+    print(f"get_completion_gpt的message为:{messages}")
+    response = openai.chat.completions.create(
         model=model,
         messages=messages,
-        temperature=temperature, # 模型输出的温度系数，控制输出的随机程度
-        max_tokens = max_tokens, # 回复最大长度
+        temperature=temperature,
+        max_tokens=max_tokens
     )
+    print(f"openai的回答为:{response}")
     # 调用 OpenAI 的 ChatCompletion 接口
-    return response.choices[0].message["content"]
+    return response.choices[0].message.role, response.choices[0].message.content
+
 
 def get_access_token(api_key, secret_key):
     """
@@ -97,7 +96,8 @@ def get_access_token(api_key, secret_key):
     response = requests.request("POST", url, headers=headers, data=payload)
     return response.json().get("access_token")
 
-def get_completion_wenxin(prompt : str, model : str, temperature : float, api_key:str, secret_key : str):
+
+def get_completion_wenxin(prompt: str, model: str, temperature: float, api_key: str, secret_key: str):
     # 封装百度文心原生接口
     if api_key == None or secret_key == None:
         api_key, secret_key = parse_llm_api_key("wenxin")
@@ -109,8 +109,8 @@ def get_completion_wenxin(prompt : str, model : str, temperature : float, api_ke
     payload = json.dumps({
         "messages": [
             {
-                "role": "user",# user prompt
-                "content": "{}".format(prompt)# 输入的 prompt
+                "role": "user",  # user prompt
+                "content": "{}".format(prompt)  # 输入的 prompt
             }
         ]
     })
@@ -123,23 +123,26 @@ def get_completion_wenxin(prompt : str, model : str, temperature : float, api_ke
     js = json.loads(response.text)
     return js["result"]
 
-def get_completion_spark(prompt : str, model : str, temperature : float, api_key:str, appid : str, api_secret : str, max_tokens : int):
-    if api_key == None or appid == None and api_secret == None:
+
+def get_completion_spark(prompt: str, model: str, temperature: float, api_key: str, appid: str, api_secret: str,
+                         max_tokens: int):
+    if api_key is None or appid is None and api_secret is None:
         api_key, appid, api_secret = parse_llm_api_key("spark")
-    
+
     # 配置 1.5 和 2 的不同环境
     if model == "Spark-1.5":
-        domain = "general"  
+        domain = "general"
         Spark_url = "ws://spark-api.xf-yun.com/v1.1/chat"  # v1.5环境的地址
     else:
-        domain = "generalv2"    # v2.0版本
+        domain = "generalv2"  # v2.0版本
         Spark_url = "ws://spark-api.xf-yun.com/v2.1/chat"  # v2.0环境的地址
 
-    question = [{"role":"user", "content":prompt}]
-    response = spark_main(appid,api_key,api_secret,Spark_url,domain,question,temperature, max_tokens)
+    question = [{"role": "user", "content": prompt}]
+    response = spark_main(appid, api_key, api_secret, Spark_url, domain, question, temperature, max_tokens)
     return response
 
-def get_completion_glm(prompt : str, model : str, temperature : float, api_key:str, max_tokens : int):
+
+def get_completion_glm(prompt: str, model: str, temperature: float, api_key: str, max_tokens: int):
     # 获取GLM回答
     if api_key == None:
         api_key = parse_llm_api_key("zhipuai")
@@ -147,11 +150,12 @@ def get_completion_glm(prompt : str, model : str, temperature : float, api_key:s
 
     response = zhipuai.model_api.invoke(
         model=model,
-        prompt=[{"role":"user", "content":prompt}],
-        temperature = temperature,
+        prompt=[{"role": "user", "content": prompt}],
+        temperature=temperature,
         max_tokens=max_tokens
-        )
+    )
     return response["data"]["choices"][0]["content"].strip('"').strip(" ")
+
 
 # def getText(role, content, text = []):
 #     # role 是指定角色，content 是 prompt 内容
@@ -163,6 +167,7 @@ def get_completion_glm(prompt : str, model : str, temperature : float, api_key:s
 
 # 星火 API 调用使用
 answer = ""
+
 
 class Ws_Param(object):
     # 初始化
@@ -216,7 +221,7 @@ def on_error(ws, error):
 
 
 # 收到websocket关闭的处理
-def on_close(ws,one,two):
+def on_close(ws, one, two):
     print(" ")
 
 
@@ -226,7 +231,8 @@ def on_open(ws):
 
 
 def run(ws, *args):
-    data = json.dumps(gen_params(appid=ws.appid, domain= ws.domain,question=ws.question, temperature = ws.temperature, max_tokens = ws.max_tokens))
+    data = json.dumps(gen_params(appid=ws.appid, domain=ws.domain, question=ws.question, temperature=ws.temperature,
+                                 max_tokens=ws.max_tokens))
     ws.send(data)
 
 
@@ -242,7 +248,7 @@ def on_message(ws, message):
         choices = data["payload"]["choices"]
         status = choices["status"]
         content = choices["text"][0]["content"]
-        print(content,end ="")
+        print(content, end="")
         global answer
         answer += content
         # print(1)
@@ -250,7 +256,7 @@ def on_message(ws, message):
             ws.close()
 
 
-def gen_params(appid, domain,question, temperature, max_tokens):
+def gen_params(appid, domain, question, temperature, max_tokens):
     """
     通过appid和用户的提问来生成请参数
     """
@@ -264,7 +270,7 @@ def gen_params(appid, domain,question, temperature, max_tokens):
                 "domain": domain,
                 "random_threshold": 0.5,
                 "max_tokens": max_tokens,
-                "temperature" : temperature,
+                "temperature": temperature,
                 "auditing": "default"
             }
         },
@@ -277,9 +283,10 @@ def gen_params(appid, domain,question, temperature, max_tokens):
     return data
 
 
-def spark_main(appid, api_key, api_secret, Spark_url,domain, question, temperature, max_tokens):
+def spark_main(appid, api_key, api_secret, Spark_url, domain, question, temperature, max_tokens):
     # print("星火:")
     output_queue = queue.Queue()
+
     def on_message(ws, message):
         data = json.loads(message)
         code = data['header']['code']
@@ -308,11 +315,12 @@ def spark_main(appid, api_key, api_secret, Spark_url,domain, question, temperatu
     ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
     return ''.join([output_queue.get() for _ in range(output_queue.qsize())])
 
-def parse_llm_api_key(model:str, env_file:dict()=None):
+
+def parse_llm_api_key(model: str, env_file: dict() = None):
     """
     通过 model 和 env_file 的来解析平台参数
-    """   
-    if env_file == None:
+    """
+    if env_file is None:
         _ = load_dotenv(find_dotenv())
         env_file = os.environ
     if model == "openai":
@@ -326,3 +334,14 @@ def parse_llm_api_key(model:str, env_file:dict()=None):
         # return env_file["ZHIPUAI_API_KEY"]
     else:
         raise ValueError(f"model{model} not support!!!")
+
+
+if __name__ == "__main__":
+    prompt = "什么是LLM"
+    model = "gpt-3.5-turbo"
+    temperature = 0.7
+    api_key = os.environ.get("OPENAI_API_KEY")
+    max_tokens = 150
+
+    answer = get_completion_gpt(prompt, model, temperature, api_key, max_tokens)
+    print(f"回答: {answer}")

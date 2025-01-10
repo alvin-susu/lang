@@ -1,7 +1,7 @@
-import gradio as gr
-
 import os
 import sys
+
+import gradio as gr
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
@@ -126,14 +126,14 @@ with block as demo:
         # 设置文本框的提交事件（即按下Enter键时）。功能与上面的 llm_btn 按钮点击事件相同。
         msg.submit(respond,
                    inputs=[msg, chatbot, llm, history_len, temperature],
-                   outputs=[msg, chatbot], show_progress="hidden")
+                   outputs=chatbot, show_progress = "hidden")
         # 点击后清空后端存储的聊天记录
         clear.click(model_center.clear_history)
-    gr.Markdown("""提醒：<br>
+        gr.Markdown("""提醒：<br>
         1. 使用时请先上传自己的知识文件，不然将会解析项目自带的知识库。
         2. 初始化数据库时间可能较长，请耐心等待。
         3. 使用中如果出现异常，将会在文本输入框进行展示，请不要惊慌。 <br>
         """)
 
-gr.close_all()
-demo.launch(debug=True)
+        gr.close_all()
+        demo.launch(debug=True)

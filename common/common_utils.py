@@ -2,6 +2,7 @@ import os
 import re
 
 from dotenv import load_dotenv, find_dotenv
+from gradio.components.chatbot import ChatMessage
 from langchain_community.document_loaders import UnstructuredMarkdownLoader, PyMuPDFLoader, UnstructuredFileLoader
 from langchain_community.embeddings import ZhipuAIEmbeddings
 from langchain_core.utils import get_from_dict_or_env
@@ -160,6 +161,7 @@ def __parse_llm_api_key(model: str):
     print("从环境变量获取key完成")
     return key
 
+
 def format_chat_prompt(message, chat_history):
     prompt = ""
     for chat_item in chat_history:
@@ -181,24 +183,21 @@ def respond(message, chat_history, llm, history_len=3, temperature=0.1, max_toke
     "": 空字符串表示没有内容需要显示在界面上，可以替换为真正的机器人回复。
     chat_history: 更新后的聊天历史记录
     """
-    print(f"respond函数入参: message:{message}, chat_history:{chat_history}, history_len:{history_len}, temperature:{temperature}, max_tokens:{max_tokens}")
+    print(
+        f"respond函数入参: message:{message}, chat_history:{chat_history}, history_len:{history_len}, temperature:{temperature}, max_tokens:{max_tokens}")
     if message is None or len(message) < 1:
-        return "", chat_history
+        return None
     try:
         # 限制 history 的记忆长度
-        chat_history = chat_history[-history_len:] if history_len > 0 else []
+        chat_history = chat_history[-1:-history_len] if history_len > 0 else []
         # 调用上面的函数，将用户的消息和聊天历史记录格式化为一个 prompt。
+        print(f"取出的最近{history_len}条消息为:{chat_history}")
         formatted_prompt = format_chat_prompt(message=message, chat_history=chat_history)
         print(f"格式化后的消息为{formatted_prompt}")
         # 使用llm对象的predict方法生成机器人的回复（注意：llm对象在此代码中并未定义）。
-        bot_message = get_completion(
+        response = get_completion(
             formatted_prompt, llm, temperature=temperature, max_tokens=max_tokens)
-        # 将bot_message中\n换为<br/>
-        bot_message = re.sub(r"\\n", '<br/>', bot_message)
-        # 将用户的消息和机器人的回复加入到聊天历史记录中。
-        chat_history.append((message, bot_message))
-        # 返回一个空字符串"和更新后的聊天历史记录（这里的空字符串可以替换为真正的机器人回复，如果需要显示在界面上）。
-        print(f"历史对话为:{chat_history}")
-        return chat_history
+        print(f"回答为:{response}")
+        return [ChatMessage(role= response[0], content=response[1])]
     except Exception as e:
-        return e, chat_history
+        raise e

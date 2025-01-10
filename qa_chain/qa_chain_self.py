@@ -94,7 +94,9 @@ class QaChainSelf:
 
         # 需要带历史记录则将is_user_history置为True
         print(f"提问的question为{question}, 上下文为:{self.chat_history}")
-        result = self.qa_chain.invoke({"input": question, "question": question, "context": self.chat_history if self.is_user_history else None})
+        result = self.qa_chain.invoke({"input": question,
+                                       "question": question,
+                                       "context": self.chat_history if self.is_user_history else None})
         print(f"模型回答的结果为:{result}")
         user_message = gradio.ChatMessage(role="user", content=result['question'])
         assistant_message = gradio.ChatMessage(role="assistant", content=result['answer'])
