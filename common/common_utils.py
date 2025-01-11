@@ -198,6 +198,6 @@ def respond(message, chat_history, llm, history_len=3, temperature=0.1, max_toke
         response = get_completion(
             formatted_prompt, llm, temperature=temperature, max_tokens=max_tokens)
         print(f"回答为:{response}")
-        return [ChatMessage(role= response[0], content=response[1])]
+        return [ChatMessage(role="user", content=message), ChatMessage(role=response[0], content=response[1])]
     except Exception as e:
         raise e
