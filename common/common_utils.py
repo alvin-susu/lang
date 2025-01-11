@@ -165,8 +165,11 @@ def __parse_llm_api_key(model: str):
 def format_chat_prompt(message, chat_history):
     prompt = ""
     for chat_item in chat_history:
-        user_message, bot_message = chat_item
-        prompt = f"{prompt} \nUser:{user_message}\nAssistant: {bot_message}"
+        print(f"chat_item是:{chat_item}")
+        if chat_item['role'] == 'user':
+            prompt = f"{prompt} \nUser:{chat_item['content']}"
+        elif chat_item['role'] == 'assistant':
+            prompt = f"{prompt} \nAssistant:{chat_item['content']}"
     prompt = f"{prompt}\nUser: {message}\nAssistant:"
     return prompt
 
@@ -189,7 +192,7 @@ def respond(message, chat_history, llm, history_len=3, temperature=0.1, max_toke
         return None
     try:
         # 限制 history 的记忆长度
-        chat_history = chat_history[-1:-history_len] if history_len > 0 else []
+        chat_history = chat_history[-history_len:] if history_len > 0 else []
         # 调用上面的函数，将用户的消息和聊天历史记录格式化为一个 prompt。
         print(f"取出的最近{history_len}条消息为:{chat_history}")
         formatted_prompt = format_chat_prompt(message=message, chat_history=chat_history)
@@ -201,3 +204,4 @@ def respond(message, chat_history, llm, history_len=3, temperature=0.1, max_toke
         return [ChatMessage(role="user", content=message), ChatMessage(role=response[0], content=response[1])]
     except Exception as e:
         raise e
+
