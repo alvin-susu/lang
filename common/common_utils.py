@@ -200,8 +200,10 @@ def respond(message, chat_history, llm, history_len=3, temperature=0.1, max_toke
         # 使用llm对象的predict方法生成机器人的回复（注意：llm对象在此代码中并未定义）。
         response = get_completion(
             formatted_prompt, llm, temperature=temperature, max_tokens=max_tokens)
-        print(f"回答为:{response}")
-        return [ChatMessage(role="user", content=message), ChatMessage(role=response[0], content=response[1])]
+        print(f"回答为:{response},chat_history类型为{type(chat_history)}")
+        chat_history.extend([ChatMessage(role="user", content=message), ChatMessage(role=response[0], content=response[1])])
+        print(f"拼接后的chat_history为:{chat_history},类型为{type(chat_history)}")
+        return chat_history
     except Exception as e:
         raise e
 
